@@ -1,0 +1,5 @@
+create 0 Hello 
+create 1 World
+combine 2 0 1
+print 2
+delete 2
