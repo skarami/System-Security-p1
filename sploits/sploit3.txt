@@ -1,35 +1,33 @@
 Target3 has format string Vulnerability. By writing a specific format string
-in arg parameter of foo function we can force this program to overwrite return
-address with an address that we want, so after foo the program will return on an
+on arg parameter of foo function we can force this program to overwrite return
+address with an address that we want, so after foo, the program will return on an
 address that we want.
 
-The format string should follow this pattern:
+For exploiting this vulerability the format string should follow this pattern:
 <address>ZZZZ<address+1>ZZZZ<address+2>ZZZZ<address+3><Shellcode>%8x...%8x%<len1>x%hhn%<len2>x%hhn%<len3>x%hhn%<len4>x%hhn
 
 <address> is the address of "return Address" in the stack. %hhn will overwrite
-LSB byte of this address by the number of bytes that snprintf has printed
-until now. Therefore, we choose <len1> as a value that will overwrite on LSB
-byte of "Return Address" on the stack to become equal to two LSB byte of
-shellcode's address. As a same way, we choose <len2> as a value that LSB of 
-<address+1> (which is 2nd byte of "return Address" on the stack) become equal 
-to 2nd byte of the address of our shellcode. Until now we have overwritten 
-two LSB of "Return Address", in a similar way we choose <len3> and <len4> 
-to overwrite rest two bytes of "Return Address". So, in this way we overwrote 
-"Return Address" to address of our shellcode.
+Least Significant Byte of this address by the number of bytes that snprintf has 
+printed until now. We will repeat %hhn four time to overwrite all four bytes of 
+"Return Address". First %hhn will overwrite Least Significant Byte of "return 
+address", second %hhn will overwrite second Least Significant Byte of "return 
+address" an so on.
 
 The number of %8x after shellcode is very important. We should check various
-number of %8x to find how many of them in required to be sure that %hhn will
+number of %8x to find how many of them is required to be sure that %hhn will
 overwrite data on correct address.
----------------------------------------------------------------------------
-Size of input of snprintf in foo function is limited to 116 byte, so we set
+
+
+-------------------- Now we will explain our code ----------------------------
+Size of input of snprintf in foo function is limited to 116 bytes, so we set
 size of arg1 to 116.
 
 	char arg1[116];
 
 We must first write <address> in little endian format on arg1. First %hhn will
-read this address and will overwrite first byte of place that it refer to (1st 
-byte of Return Address) by the number of bytes that have been printed until now
-that is equal to <something+len1>
+read this address and will overwrite first byte of the place that it refer to 
+(1st byte of Return Address) by the number of bytes that have been printed until 
+now that is equal to <something+len1>
 
 	strcpy(arg1,   "\x64\xfd\xff\xbe");
 
@@ -38,7 +36,7 @@ We must write four arbitrary character to be used by %<len1>x
 	strcpy(arg1+4, "ZZZZ");
 
 Next we must write <address+1> in little endian format. Second %hhn will read 
-this address and will overwrite first byte of place that it refer to (2nd 
+this address and will overwrite first byte of the place that it refer to (2nd 
 byte of Return Address) by the number of bytes that have been printed until 
 now that is equal to <something+len2>
 
@@ -49,7 +47,7 @@ We must write four arbitrary character to be used by %<len2>x
 	strcpy(arg1+12, "ZZZZ");
 
 After that we must write <address+2> in little endian format. Third %hhn will
-read this address and will overwrite first byte of place that it refer to 
+read this address and will overwrite first byte of the place that it refer to 
 (3rd byte of Return Address) by the number of bytes that have been printed 
 until now that is equal to <something+len3>
 
@@ -70,9 +68,9 @@ After that we write our shellcode on the arg1.
 
 	strcpy(arg1+28, shellcode);
 
-Empirically We found that we need only on %08x. Also, we found that value of
-<len1>, <len2>, <len3>, and <len4> should be 191, 245, 285, and 191
-respectively. So, our payload will be like this:
+Empirically, we found that we need only one %08x. Also, we found that value of
+<len1>, <len2>, <len3>, and <len4> should be 191, 245, 285, and 191 respectively. 
+So, our payload will be like this:
 
 	char * payload = "%08x%191x%hhn%245x%hhn%258x%hhn%191x%hhn";
 
@@ -80,8 +78,7 @@ We write payload on arg1.
 
 	strcat(arg1, payload);
 
-We put a NULL byte at the end of our arg to say that our string has been
-finished.
+We put a NULL byte at the end of arg1 to say that our string has been finished.
 
 	strcat(arg1, "\x00");
 
