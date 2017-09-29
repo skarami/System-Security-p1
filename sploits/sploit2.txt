@@ -1,13 +1,13 @@
 This program has integer overflow vulnerability and we will use this
 vulnerability to bypass limitation of copying data on buf in target2. 
 
-Size of arg1 must be large enough to overflow and overwrite return address.
-Current size of it is MAX_WIDGETS*sizeof(struct widget)=268*32=8576;
+Size of arg1 must be large enough that when we copy it on buf, it overflows and
+overwrites return address. Size of buf is MAX_WIDGETS*sizeof(struct widget)=268*32=8576;
 therefore, we choose 269*32=8608 as size of arg1.
 	
 	char arg1[8608];
 
-For copying arg1 into the buffer of foo function we must choose a negative
+For copying arg1 into the buf of foo function we must choose a negative
 number x which x*32=8608. We found that x can be -2147483379.
 
 	char *first = "-2147483379,";
@@ -33,8 +33,5 @@ on address of arg1+8592. In this way, when arg1 will be copied on buf,
 
 Finally, we run target2 with arg1 as its input.
 
-	char *args[] = { TARGET, arg1, NULL };
-	char *env[] = { NULL };
-
-	if (0 > execve(TARGET, args, env))
+	if(0>execve(TARGET, args, env))
 		fprintf(stderr, "execve failed.\n");
