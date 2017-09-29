@@ -1,1 +1,32 @@
-Use this file to explain how your sploit1 works.
+The target1 has a simple buffer overflow vulnerability. Size of buf in the foo
+function is 284, so for overflowing this buf and overwriting "return address" we
+need to copy a string that its size is 284+8=292 on it. For this reason we
+create arg1 with size of 292+1=293 because we must put a NULL byte at the end
+of string.
+	
+	char arg1[293];
+
+We copy our shellcode on the arg1.
+
+	strcpy(arg1,shellcode);
+
+After that we put some NON-NULL Characters on rest of arg1, in our case these
+characters are 0x55 which is NOP or 'U'.
+
+	memset(arg1+strlen(shellcode),0x55,293-strlen(shellcode));
+
+For overwriting the "return address" we put address of our shellcode, which is
+address of buf, at the address of arg1+sizeof(buf)+4=arg1+288, which is the 
+address of "return address".
+
+	*(unsigned *)(&arg1[288])=0xbefffb84;
+
+We put a NULL byte at the end of arg1 to say that the string has been
+finished.
+
+	arg1[292]=0;
+
+Finally, we execute the target1 with arg1 as its input.
+
+	if (0 > execve(TARGET, args, env))
+		fprintf(stderr, "execve failed.\n");
