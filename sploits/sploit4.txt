@@ -1,9 +1,9 @@
-Target4 has bufer overflow vulnerability but it use canary so we cannot change
+Target4 has buffer overflow vulnerability but it use canary so we cannot change
 "return address" of print_sub_string function. However, in this function
 str.getLen() fuction is called and we can overwrite address of this function 
-to execute our shellcode instead of str.getLen().
+to execute our shellcode instead of executing str.getLen(). 
 
-First we define arg1 to put malcious input on it.
+First, we define arg1 to put malcious input on it.
 
 	char arg1[100];
 
@@ -19,9 +19,9 @@ After that we place our shellcode (it will be located at &buf+16 which will be
 
 	strcpy(arg1+16, shellcode);
 
-Next, we write some arbitrary character on stack in order to the buf overflows
-and then we put &buf. Before overwriting, address of str.getLen()-12 was here but we 
-put address of shellcode-12 (which is &buf) here.
+Next, we add some arbitrary character in order to the buf overflows and then we 
+put &buf. Before overwriting, address of str.getLen()-12 was here but we put 
+address of shellcode-12 (which is &buf) here.
 
 	strcat(arg1, "aaaaaaaaaaaaaaaaaaaaaaaaaabbbbb\xf8\xfc\xff\xbe");
 
